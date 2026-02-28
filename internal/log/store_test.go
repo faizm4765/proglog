@@ -51,3 +51,15 @@ func testReadAt(t *testing.T, s *store) {
 		require.Equal(t, testData, buf)
 	}
 }
+
+func TestStoreClose(t *testing.T) {
+	tempFile, err := os.CreateTemp("", "store_test")
+	require.NoError(t, err)
+	defer os.Remove(tempFile.Name())
+	s, err := newStore(tempFile)
+	require.NoError(t, err)
+
+	err = s.Close()
+	require.NoError(t, err)
+}
+
