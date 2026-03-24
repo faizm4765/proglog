@@ -19,7 +19,7 @@ type Index struct {
 	size uint64
 }
 
-func newIndex(f *os.File) (*Index, error) {
+func newIndex(f *os.File, maxBytes uint64) (*Index, error) {
 	idx := &Index{
 		file: f,
 	}
@@ -32,7 +32,8 @@ func newIndex(f *os.File) (*Index, error) {
 	idx.size = uint64(fi.Size())
 
 	// expanding the file before mmap is required when you plan to write new data beyond the current file size.
-	if err = os.Truncate(f.Name(), int64(idx.size+indexRecordWidth)); err != nil {
+	// maxBytes determines how much space is pre-allocated for the index file.
+	if err = os.Truncate(f.Name(), int64(maxBytes)); err != nil {
 		return nil, err
 	}
 
@@ -66,7 +67,9 @@ func (idx *Index) Close() error {
 
 }
 
-// here out and pos refer to the offset and position values that are stored in the index record.
+// here "out" and "pos" refer to the offset and position values that are stored in the index record.
+//
+// here "in" is the input parameter that specifies which index record we want to read. The method calculates the byte offset of the desired index record in the memory-mapped file and retrieves the offset and position values from that record, returning them as out and pos respectively.
 func (idx *Index) Read(in uint64) (out uint32, pos uint64, err error) {
 	if idx.size == 0 {
 		return 0, 0, nil
@@ -90,6 +93,7 @@ func (idx *Index) Read(in uint64) (out uint32, pos uint64, err error) {
 // here we intend to append a new index record to the end of the index file.
 func (idx *Index) Write(off uint32, pos uint64) error {
 	if idx.size+indexRecordWidth > uint64(len(idx.mmap)) {
+		// mmap is full and we cannot write more data to it, so we return an error indicating that the operation is invalid.
 		return os.ErrInvalid
 	}
 
