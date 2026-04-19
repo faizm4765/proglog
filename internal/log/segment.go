@@ -13,12 +13,11 @@ type segment struct {
 	nextOffset int64 // nextOffset is the offset that will be assigned to the next record appended to the segment.
 }
 
-// segment whihch wraps index and store
+// segment which wraps index and store
 func newSegment(dir string, baseOffset int64) (*segment, error) {
 	s := &segment{baseOffset: baseOffset}
 
 	var err error
-
 	storeFile, err := os.OpenFile(path.Join(dir, fmt.Sprintf("%d%s", baseOffset, ".store")), os.O_RDWR|os.O_CREATE|os.O_APPEND, 0644)
 	if err != nil {
 		return nil, err
